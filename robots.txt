@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://SEU-SITE.pages.dev/sitemap.xml
