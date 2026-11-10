@@ -60,5 +60,7 @@
     await persist('Salvo! O site já mostra as mudanças.'); list(); $('#form').hidden = true;
   };
   $('#saveSite').onclick = async () => { cat.site = { contactEmail: $('#email').value.trim() }; await persist('E-mail salvo.'); };
+  $('#bk').onclick = () => { const l = document.createElement('a'); l.href = URL.createObjectURL(new Blob([JSON.stringify(cat)], { type: 'application/json' })); l.download = 'asc-store-backup-' + new Date().toISOString().slice(0, 10) + '.json'; l.click(); };
+  $('#rs').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const d = JSON.parse(await f.text()); if (!Array.isArray(d.apps)) throw 0; if (!confirm('Substituir o catálogo atual pelo backup?')) return; cat = d; await persist('Backup restaurado.'); list(); } catch { msg('Arquivo de backup inválido.', 1); } e.target.value = ''; };
   init();
 })();
