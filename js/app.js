@@ -90,7 +90,8 @@
   $('#yr').textContent = new Date().getFullYear();
   window.addEventListener('hashchange', route);
 
-  fetch('data/apps.json').then(r => r.json()).then(d => {
+  fetch('/api/apps').then(r => { if (!r.ok) throw 0; return r.json(); }).then(d => d.empty ? Promise.reject() : d)
+    .catch(() => fetch('data/apps.json').then(r => r.json())).then(d => {
     DATA = d;
     if (d.site?.contactEmail) { const c = $('#contact'); c.href = 'mailto:' + d.site.contactEmail; c.textContent = d.site.contactEmail; }
     route();

@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
-Sitemap: https://SEU-SITE.pages.dev/sitemap.xml
+Sitemap: https://asc-store.pages.dev/sitemap.xml
+Disallow: /admin/

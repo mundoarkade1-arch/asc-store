@@ -11,3 +11,8 @@ Depois troque `SEU-SITE.pages.dev` em `robots.txt` e `sitemap.xml` pelo seu ende
 
 ## Rodar localmente
 `python3 -m http.server 8000` na pasta do projeto, e abra http://localhost:8000
+
+## Painel de administração (/admin/)
+Acesse `https://SEU-SITE/admin/` e entre com a senha. Cadastre apps, ícone, capturas e o repositório do GitHub.
+Para lançar versão nova: no GitHub crie uma Release com tag `v1.0.1` e anexe o `.apk`. Em até 5 minutos o site mostra versão, tamanho, data, histórico e link novos.
+Configuração no Cloudflare (uma vez): KV com binding `ASC_KV`; secrets `ADMIN_PASSWORD` e `SESSION_SECRET`; opcional `GITHUB_TOKEN`.
