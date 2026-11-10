@@ -5,13 +5,18 @@
   const isNew = a => (Date.now() - new Date(a.updatedAt)) / 864e5 <= 30;
   let DATA = { apps: [], site: {} };
 
-  const dl = a => a.downloadUrl
-    ? `<a class="btn pri" href="${esc(a.downloadUrl)}" rel="noopener" download>Baixar APK</a>`
-    : `<span class="btn pri" aria-disabled="true">Download em breve</span>`;
+  const PL = { celular: 'Celular', tvbox: 'TV Box e Android TV', smarttv: 'Smart TV', desktop: 'Computador' };
+  const dls = a => a.downloads?.length ? a.downloads : (a.downloadUrl ? [{ label: 'Download', name: '', url: a.downloadUrl, size: a.apkSize }] : []);
+  const plats = a => (a.platforms || []).length ? `<div class="plats">${a.platforms.map(p => `<span class="plat">${esc(PL[p] || p)}</span>`).join('')}</div>` : '';
+  const dl = a => { const d = dls(a);
+    if (!d.length) return `<span class="btn pri" aria-disabled="true">Download em breve</span>`;
+    if (d.length > 1) return `<a class="btn pri" href="#/app/${esc(a.id)}">Escolher download</a>`;
+    return `<a class="btn pri" href="${esc(d[0].url)}" rel="noopener" download>Baixar</a>`; };
+  const dlList = a => { const d = dls(a); return d.length ? `<h2>Downloads</h2><div class="dls">${d.map(x => `<a class="dl" href="${esc(x.url)}" rel="noopener" download><b>${esc(x.label)}</b><small>${esc(x.size || '')}${x.name ? ' · ' + esc(x.name) : ''}</small><span class="btn pri">Baixar</span></a>`).join('')}</div>` : '<p class="empty">Download em breve.</p>'; };
   const card = a => `<article class="card">
     <div class="ch"><img class="ico" src="${esc(a.icon)}" alt="" width="64" height="64" loading="lazy">
     <div><h3>${esc(a.name)}${isNew(a) ? '<span class="tag">Atualizado</span>' : ''}</h3><div class="meta">${esc(a.category)} · v${esc(a.version)}</div></div></div>
-    <p>${esc(a.tagline)}</p>
+    <p>${esc(a.tagline)}</p>${plats(a)}
     <div class="acts"><a class="btn" href="#/app/${esc(a.id)}">Conhecer</a>${dl(a)}</div></article>`;
 
   function setMeta(t, d) {
@@ -20,7 +25,7 @@
   }
 
   function home() {
-    setMeta('', 'Conheça, explore e baixe os aplicativos Android desenvolvidos pela ASC.');
+    setMeta('', 'Conheça, explore e baixe os aplicativos da ASC para celular, TV Box, Smart TV e computador.');
     const feat = DATA.apps.filter(a => a.featured);
     main.innerHTML = `<section class="hero"><div class="wrap"><div>
       <h1>Seus aplicativos.<span>Um só lugar.</span></h1>
@@ -32,24 +37,25 @@
   }
 
   function apps(params) {
-    setMeta('Aplicativos', 'Catálogo completo de aplicativos Android da ASC.');
+    setMeta('Aplicativos', 'Catálogo completo de aplicativos da ASC para celular, TV Box, Smart TV e computador.');
     const cats = [...new Set(DATA.apps.map(a => a.category))].sort();
-    let st = { q: params.get('q') || '', cat: params.get('cat') || '', sort: 'recent' };
+    let st = { q: params.get('q') || '', cat: params.get('cat') || '', sort: 'recent', plat: '' };
     main.innerHTML = `<section class="blk wrap"><div class="head"><h2>Catálogo completo</h2></div>
       <div class="tools"><div class="chips" id="chips" role="group" aria-label="Categorias"></div>
-      <select id="sort" aria-label="Ordenar por"><option value="recent">Mais recentes</option><option value="name">Nome (A–Z)</option></select></div>
+      <select id="plat" aria-label="Plataforma"><option value="">Todas as plataformas</option>${Object.entries(PL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select><select id="sort" aria-label="Ordenar por"><option value="recent">Mais recentes</option><option value="name">Nome (A–Z)</option></select></div>
       <div class="grid" id="list" aria-live="polite"></div></section>`;
     const chips = $('#chips'), list = $('#list'), q = $('#q');
     q.value = st.q;
     const draw = () => {
       chips.innerHTML = ['', ...cats].map(c => `<button class="chip" data-c="${esc(c)}" aria-pressed="${st.cat === c}">${c ? esc(c) : 'Todas'}</button>`).join('');
       const t = st.q.trim().toLowerCase();
-      let r = DATA.apps.filter(a => (!st.cat || a.category === st.cat) &&
+      let r = DATA.apps.filter(a => (!st.cat || a.category === st.cat) && (!st.plat || (a.platforms || []).includes(st.plat)) &&
         (!t || [a.name, a.tagline, a.description, a.category].join(' ').toLowerCase().includes(t)));
       r.sort(st.sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => b.updatedAt.localeCompare(a.updatedAt));
       list.innerHTML = r.map(card).join('') || '<p class="empty">Nenhum aplicativo encontrado. Tente outra busca ou categoria.</p>';
     };
     chips.onclick = e => { const b = e.target.closest('.chip'); if (b) { st.cat = b.dataset.c; draw(); } };
+    $('#plat').onchange = e => { st.plat = e.target.value; draw(); };
     $('#sort').onchange = e => { st.sort = e.target.value; draw(); };
     q.oninput = () => { st.q = q.value; draw(); };
     draw();
@@ -61,9 +67,9 @@
     setMeta(a.name, a.tagline);
     main.innerHTML = `<section class="det wrap"><a class="back" href="#/apps">← Voltar ao catálogo</a>
       <div class="dh"><img class="ico" src="${esc(a.icon)}" alt="Ícone do ${esc(a.name)}"><div><h1>${esc(a.name)}</h1><p class="meta">${esc(a.category)}${isNew(a) ? '<span class="tag">Atualizado</span>' : ''}</p></div>
-      <div style="margin-left:auto">${dl(a)}</div></div>
-      <p style="color:var(--mut);max-width:70ch">${esc(a.description)}</p>
-      <div class="facts"><div><small>Versão atual</small><b>${esc(a.version)}</b></div><div><small>Tamanho do APK</small><b>${esc(a.apkSize)}</b></div>
+      </div>${plats(a)}
+      <p style="color:var(--mut);max-width:70ch;margin-bottom:2rem">${esc(a.description)}</p>${dlList(a)}
+      <div class="facts"><div><small>Versão atual</small><b>${esc(a.version)}</b></div><div><small>Tamanho</small><b>${esc(a.apkSize)}</b></div>
       <div><small>Atualizado em</small><b>${fmt(a.updatedAt)}</b></div><div><small>Requisitos mínimos</small><b>${esc(a.minAndroid)}</b></div></div>
       ${a.screenshots?.length ? `<h2>Capturas de tela</h2><div class="shots" style="margin:1rem 0 2rem">${a.screenshots.map((s, i) => `<img src="${esc(s)}" alt="Captura de tela ${i + 1} do ${esc(a.name)}" loading="lazy">`).join('')}</div>` : ''}
       <h2>Histórico de versões</h2><ul class="hist">${(a.changelog || []).map(c => `<li><b>v${esc(c.version)}</b> <span class="meta">${fmt(c.date)}</span><ul>${c.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></li>`).join('')}</ul></section>`;
@@ -78,8 +84,8 @@
     if (!seg.length) home();
     else if (seg[0] === 'apps') apps(p);
     else if (seg[0] === 'app') detail(seg[1]);
-    else if (seg[0] === 'sobre') page('Sobre a ASC STORE', '<p>A ASC STORE é a plataforma própria da ASC para distribuir aplicativos Android. Aqui você conhece cada aplicativo, vê as novidades de cada versão e baixa o APK direto da fonte.</p><p><b>Sobre conteúdo:</b> os aplicativos de reprodução, como o ASC Cine, são apenas reprodutores. Eles não fornecem, não hospedam e não incluem filmes, séries ou listas de terceiros. Cada usuário é responsável pelas listas que utiliza e deve respeitar os direitos autorais.</p><p>Para instalar um APK, o Android pode pedir para permitir a instalação de fontes desconhecidas nas configurações do aparelho. Baixe sempre por esta página.</p>');
-    else if (seg[0] === 'privacidade') page('Política de privacidade', '<p>Atualizada em 10 de novembro de 2026.</p><p><b>Quem somos.</b> A ASC STORE é uma plataforma de distribuição de aplicativos Android da ASC.</p><p><b>Dados que coletamos.</b> O site não exige cadastro e não pede dados pessoais. Não usamos ferramentas de análise nem de publicidade. Como em qualquer site, a infraestrutura (Cloudflare) processa dados técnicos de acesso, como endereço IP e tipo de navegador, para entregar as páginas e garantir a segurança.</p><p><b>Downloads.</b> Os arquivos APK são baixados de serviços externos, como o GitHub, que têm suas próprias políticas de privacidade.</p><p><b>Aplicativos.</b> Cada aplicativo pode tratar dados de forma própria. O ASC Cine é um reprodutor de listas IPTV e não fornece nem hospeda conteúdo; as listas utilizadas são de responsabilidade do usuário.</p><p><b>Seus direitos.</b> Conforme a LGPD (Lei 13.709/2018), você pode pedir informações, correção ou exclusão de dados pessoais que tenhamos sobre você, escrevendo para ' + (DATA.site?.contactEmail ? esc(DATA.site.contactEmail) : 'o e-mail de contato indicado no rodapé') + '.</p>');
+    else if (seg[0] === 'sobre') page('Sobre a ASC STORE', '<p>A ASC STORE é a plataforma própria da ASC para distribuir seus aplicativos para celular, TV Box, Smart TV e computador. Aqui você conhece cada aplicativo, vê as novidades de cada versão e baixa o arquivo certo para o seu aparelho.</p><p><b>Sobre conteúdo:</b> os aplicativos de reprodução, como o ASC Cine, são apenas reprodutores. Eles não fornecem, não hospedam e não incluem filmes, séries ou listas de terceiros. Cada usuário é responsável pelas listas que utiliza e deve respeitar os direitos autorais.</p><p>No Android e no Android TV, para instalar um APK o sistema pode pedir permissão para instalar de fontes desconhecidas. No Windows, programas novos podem exibir um aviso de segurança. Baixe sempre por esta página.</p>');
+    else if (seg[0] === 'privacidade') page('Política de privacidade', '<p>Atualizada em 10 de novembro de 2026.</p><p><b>Quem somos.</b> A ASC STORE é uma plataforma de distribuição de aplicativos da ASC.</p><p><b>Dados que coletamos.</b> O site não exige cadastro e não pede dados pessoais. Não usamos ferramentas de análise nem de publicidade. Como em qualquer site, a infraestrutura (Cloudflare) processa dados técnicos de acesso, como endereço IP e tipo de navegador, para entregar as páginas e garantir a segurança.</p><p><b>Downloads.</b> Os arquivos de instalação são baixados de serviços externos, como o GitHub, que têm suas próprias políticas de privacidade.</p><p><b>Aplicativos.</b> Cada aplicativo pode tratar dados de forma própria. O ASC Cine é um reprodutor de listas IPTV e não fornece nem hospeda conteúdo; as listas utilizadas são de responsabilidade do usuário.</p><p><b>Seus direitos.</b> Conforme a LGPD (Lei 13.709/2018), você pode pedir informações, correção ou exclusão de dados pessoais que tenhamos sobre você, escrevendo para ' + (DATA.site?.contactEmail ? esc(DATA.site.contactEmail) : 'o e-mail de contato indicado no rodapé') + '.</p>');
     else page('Página não encontrada', '<p><a href="#/" style="color:var(--lime)">Voltar ao início</a></p>');
     if (seg[0] !== 'apps') window.scrollTo(0, 0);
   }

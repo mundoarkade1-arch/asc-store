@@ -25,7 +25,7 @@
     cur = i; const a = i == null ? {} : cat.apps[i];
     F('name').value = a.name || ''; F('tagline').value = a.tagline || ''; F('description').value = a.description || '';
     F('category').value = a.category || ''; F('min').value = a.minAndroid || ''; F('repo').value = a.repo || '';
-    F('featured').checked = !!a.featured; F('url').value = a.downloadUrl || ''; F('version').value = a.version || ''; F('size').value = a.apkSize || '';
+    F('featured').checked = !!a.featured; document.querySelectorAll('#plats input').forEach(c => { c.checked = (a.platforms || []).includes(c.value); }); F('url').value = a.downloadUrl || ''; F('version').value = a.version || ''; F('size').value = a.apkSize || '';
     icon = a.icon || ''; shots = a.screenshots || []; $('#prev').src = icon; F('icon').value = ''; F('shots').value = '';
     $('#form').hidden = false; $('#form').scrollIntoView({ behavior: 'smooth' });
   }
@@ -54,7 +54,7 @@
     const id = old.id || name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (cur == null && cat.apps.some(a => a.id === id)) return msg('Já existe um aplicativo com esse nome.', 1);
     const app = { ...old, id, name, tagline: F('tagline').value.trim(), description: F('description').value.trim(), category: F('category').value.trim(),
-      minAndroid: F('min').value.trim(), repo, featured: F('featured').checked, downloadUrl: F('url').value.trim(), version: F('version').value.trim(),
+      minAndroid: F('min').value.trim(), repo, featured: F('featured').checked, platforms: [...document.querySelectorAll('#plats input:checked')].map(c => c.value), downloadUrl: F('url').value.trim(), version: F('version').value.trim(),
       apkSize: F('size').value.trim(), icon, screenshots: shots };
     cur == null ? cat.apps.push(app) : (cat.apps[cur] = app);
     await persist('Salvo! O site já mostra as mudanças.'); list(); $('#form').hidden = true;

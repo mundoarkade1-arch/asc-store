@@ -15,7 +15,19 @@ export async function isAdmin(req, env) {
 }
 export async function getCatalog(env) { return await env.ASC_KV.get('catalog', 'json'); }
 
-// Busca as releases do GitHub e atualiza versão, tamanho, data, link e histórico sozinho.
+// Lê as releases do GitHub. Cada arquivo anexado vira um download, com a plataforma deduzida pelo nome/extensão.
+const SKIP = /\.(sha256|sha1|md5|txt|md|sig|asc|json|ya?ml|blockmap)$/i;
+const ORDER = ['Android (celular)', 'TV Box e Android TV', 'Smart TV Samsung (Tizen)', 'Smart TV LG (webOS)', 'Windows', 'macOS', 'Linux', 'Download'];
+function label(n) {
+  if (/\.apk$/i.test(n)) return /tv|box/i.test(n) ? 'TV Box e Android TV' : 'Android (celular)';
+  if (/\.(exe|msi)$/i.test(n)) return 'Windows';
+  if (/\.(dmg|pkg)$/i.test(n)) return 'macOS';
+  if (/\.(appimage|deb|rpm)$/i.test(n)) return 'Linux';
+  if (/\.ipk$/i.test(n)) return 'Smart TV LG (webOS)';
+  if (/\.wgt$/i.test(n)) return 'Smart TV Samsung (Tizen)';
+  if (/\.(zip|7z|rar)$/i.test(n)) { if (/win/i.test(n)) return 'Windows'; if (/mac|osx/i.test(n)) return 'macOS'; if (/linux/i.test(n)) return 'Linux'; if (/tv|box/i.test(n)) return 'TV Box e Android TV'; }
+  return 'Download';
+}
 export async function withReleases(app, env) {
   if (!app.repo) return app;
   try {
@@ -24,12 +36,13 @@ export async function withReleases(app, env) {
       cf: { cacheTtl: 300, cacheEverything: true }
     });
     if (!r.ok) return app;
-    const list = (await r.json()).filter(x => !x.draft && !x.prerelease)
-      .map(x => ({ x, a: (x.assets || []).find(a => /\.apk$/i.test(a.name)) })).filter(o => o.a);
+    const list = (await r.json()).filter(x => !x.draft && !x.prerelease).map(x => ({ x,
+      d: (x.assets || []).filter(a => !SKIP.test(a.name)).map(a => ({ label: label(a.name), name: a.name, url: a.browser_download_url, size: (a.size / 1048576).toFixed(1) + ' MB' }))
+        .sort((p, q) => ORDER.indexOf(p.label) - ORDER.indexOf(q.label)) })).filter(o => o.d.length);
     if (!list.length) return app;
     const ver = x => x.tag_name.replace(/^v/i, ''), day = x => x.published_at.slice(0, 10);
-    const { x, a } = list[0];
-    return { ...app, version: ver(x), updatedAt: day(x), apkSize: (a.size / 1048576).toFixed(1) + ' MB', downloadUrl: a.browser_download_url,
+    const { x, d } = list[0];
+    return { ...app, version: ver(x), updatedAt: day(x), apkSize: d[0].size, downloadUrl: d[0].url, downloads: d,
       changelog: list.map(({ x }) => ({ version: ver(x), date: day(x),
         notes: (x.body || 'Nova versão').split('\n').map(l => l.replace(/^[-*#\s]+/, '').trim()).filter(Boolean).slice(0, 8) })) };
   } catch { return app; }

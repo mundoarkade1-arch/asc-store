@@ -16,3 +16,6 @@ Depois troque `SEU-SITE.pages.dev` em `robots.txt` e `sitemap.xml` pelo seu ende
 Acesse `https://SEU-SITE/admin/` e entre com a senha. Cadastre apps, ícone, capturas e o repositório do GitHub.
 Para lançar versão nova: no GitHub crie uma Release com tag `v1.0.1` e anexe o `.apk`. Em até 5 minutos o site mostra versão, tamanho, data, histórico e link novos.
 Configuração no Cloudflare (uma vez): KV com binding `ASC_KV`; secrets `ADMIN_PASSWORD` e `SESSION_SECRET`; opcional `GITHUB_TOKEN`.
+
+## Vários downloads por app (celular, TV Box, Smart TV, computador)
+Anexe todos os arquivos na mesma release. A plataforma é deduzida pelo arquivo: `.apk` (use "tv" ou "box" no nome para TV Box, ex. `ASC-Cine-TV.apk`), `.exe`/`.msi` Windows, `.dmg` macOS, `.AppImage`/`.deb` Linux, `.ipk` LG, `.wgt` Samsung. Arquivos `.zip` precisam de "win", "mac", "linux" ou "tv" no nome.

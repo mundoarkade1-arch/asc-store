@@ -19,7 +19,8 @@ textarea{min-height:110px}.r{display:flex;gap:.7rem;align-items:center;flex-wrap
 <label for="f-description">Descrição completa</label><textarea id="f-description" maxlength="3000"></textarea>
 <div class="g2"><div><label for="f-category">Categoria</label><input type="text" id="f-category" placeholder="Entretenimento"></div><div><label for="f-min">Requisito mínimo</label><input type="text" id="f-min" placeholder="Android 8.0 ou superior"></div></div>
 <label for="f-repo">Repositório do GitHub com as releases (ex.: usuario/asc-cine)</label><input type="text" id="f-repo" placeholder="usuario/repositorio">
-<small>Com o repositório preenchido, versão, tamanho, data, histórico e link do APK se atualizam sozinhos a cada nova release.</small>
+<small>Com o repositório preenchido, versão, data, histórico e os links de download (APK, EXE etc.) se atualizam sozinhos a cada nova release.</small>
+<label>Disponível para</label><div class="r" id="plats" style="gap:1.2rem"><label class="r" style="color:#fff;margin:0"><input type="checkbox" value="celular"> Celular</label><label class="r" style="color:#fff;margin:0"><input type="checkbox" value="tvbox"> TV Box e Android TV</label><label class="r" style="color:#fff;margin:0"><input type="checkbox" value="smarttv"> Smart TV</label><label class="r" style="color:#fff;margin:0"><input type="checkbox" value="desktop"> Computador</label></div>
 <div class="g2"><div><label for="f-icon">Ícone (imagem quadrada)</label><input type="file" id="f-icon" accept="image/*"></div><div><label>Ícone atual</label><img id="prev" class="ico" alt="" style="width:64px;height:64px"></div></div>
 <label for="f-shots">Capturas de tela (até 4; substituem as atuais)</label><input type="file" id="f-shots" accept="image/*" multiple>
 <label class="r" style="color:#fff"><input type="checkbox" id="f-featured"> Mostrar em destaque na página inicial</label>

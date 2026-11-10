@@ -14,7 +14,7 @@ export async function onRequestPut({ request, env }) {
   const seen = new Set();
   const apps = (Array.isArray(b.apps) ? b.apps : []).slice(0, 50).map(a => ({
     id: s(a.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, '-'), name: s(a.name, 60), tagline: s(a.tagline, 120),
-    description: s(a.description, 3000), category: s(a.category, 30) || 'Outros', featured: !!a.featured,
+    description: s(a.description, 3000), category: s(a.category, 30) || 'Outros', featured: !!a.featured, platforms: (Array.isArray(a.platforms) ? a.platforms : []).filter(p => ['celular', 'tvbox', 'smarttv', 'desktop'].includes(p)),
     icon: img(a.icon) || 'assets/brand/favicon.svg', screenshots: (Array.isArray(a.screenshots) ? a.screenshots : []).slice(0, 6).map(img).filter(Boolean),
     repo: /^[\w.-]+\/[\w.-]+$/.test(a.repo || '') ? a.repo : '', version: s(a.version, 20) || '—', apkSize: s(a.apkSize, 20) || '—',
     updatedAt: /^\d{4}-\d\d-\d\d$/.test(a.updatedAt) ? a.updatedAt : new Date().toISOString().slice(0, 10),
