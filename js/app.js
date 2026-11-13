@@ -123,7 +123,7 @@
 
   function detail(id) {
     const a = DATA.apps.find(x => x.id === id);
-    if (!a) { main.innerHTML = '<div class="wrap prose"><h1>Aplicativo não encontrado</h1><p><a href="#/apps">Voltar ao catálogo</a></p></div>'; return; }
+    if (!a) { setMeta('Aplicativo não encontrado'); main.innerHTML = '<div class="wrap prose"><h1>Aplicativo não encontrado</h1><p><a href="#/apps">Voltar ao catálogo</a></p></div>'; return; }
     setMeta(a.name, a.tagline);
     const v = verOf(a.version), sz = sizeOf(a.apkSize), up = fmt(a.updatedAt);
     main.innerHTML = `<section class="det wrap ac${accOf(a)}"><a class="back" href="#/apps">← Voltar ao catálogo</a>
