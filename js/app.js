@@ -30,8 +30,11 @@
     <p class="tg">${esc(a.tagline)}</p><div class="pills">${pills(a)}</div>${plats(a)}
     <div class="acts"><a class="btn" href="#/app/${esc(a.id)}">Conhecer</a>${dl(a)}</div></article>`;
   const skel = () => `<section class="blk wrap"><div class="grid">${[0, 1, 2].map(() => '<div class="card sk"><i></i><i></i><i></i></div>').join('')}</div></section>`;
-  const steps = () => `<div class="steps">${[['Baixe o APK do app', 'Escolha o app e toque em baixar.'], ['Permita fontes desconhecidas', 'Libere a instalação nas configurações do Android.'], ['Instale e faça login', 'Abra o arquivo baixado e entre na sua conta.']].map((s, i) => `<div class="step"><b>${i + 1}</b><div><h3>${s[0]}</h3><p>${s[1]}</p></div></div>`).join('')}</div>`;
-  const IC = { tv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>', play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 9v6l5-3z"/></svg>', shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>' };
+  const steps = () => `<div class="steps">${[['Baixe o instalador', 'Escolha o app e toque em baixar.'], ['Libere a instalação', 'Se o aparelho pedir, permita instalar o arquivo baixado.'], ['Instale e entre', 'Abra o arquivo baixado e entre na sua conta.']].map((s, i) => `<div class="step"><b>${i + 1}</b><div><h3>${s[0]}</h3><p>${s[1]}</p></div></div>`).join('')}</div>`;
+  const sv = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const IC = { tv: sv('<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>'), play: sv('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 9v6l5-3z"/>'), shield: sv('<path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="m9 12 2 2 4-4"/>'),
+    celular: sv('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>'), tvbox: sv('<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>'), smarttv: sv('<rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'),
+    desktop: sv('<rect x="4.5" y="5" width="15" height="10" rx="1.5"/><path d="M2.5 19h19l-1.5-4h-16z"/>'), grid: sv('<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>') };
 
   function setMeta(t, d) {
     document.title = t ? `${t} — ASC STORE` : 'ASC STORE — Seus aplicativos. Um só lugar.';
@@ -54,36 +57,55 @@
   function home() {
     setMeta('', 'Conheça, explore e baixe os aplicativos da ASC para celular, TV Box, Smart TV e computador.');
     const feat = DATA.apps.filter(a => a.featured), n = DATA.apps.length;
+    // Faixa que rola: nomes vêm do catálogo (nunca escritos à mão); repete até encher a tela
+    const names = DATA.apps.map(a => String(a.name || '').toUpperCase()).filter(Boolean), pool = names.length ? names : ['ASC STORE'], items = [];
+    while (items.length < 12) items.push(...pool);
+    const grp = items.map(t => `<span>${esc(t)}</span><i>/</i>`).join('');
     main.innerHTML = `<section class="hero"><div class="hw"><div class="hl">
-      <p class="eb">Novo • Apps IPTV para Android</p>
-      <h1><span>Seus aplicativos.</span><span class="l2">Um só lugar.</span></h1>
-      <p class="lead">Conheça, explore e baixe os aplicativos desenvolvidos pela ASC.</p>
-      <div class="row"><a class="btn pri big" href="#/apps">Explorar aplicativos</a><a class="btn big" href="#/sobre">Sobre a ASC STORE</a></div>
-      <div class="stats"><div><b data-n="${n}">${n}</b><span>${n === 1 ? 'app' : 'apps'}</span></div><div><b>100%</b><span>Android</span></div><div><b>HD</b><span>e Full HD</span></div></div></div>
-      <div class="phones" id="phones" aria-hidden="true">
-        <div class="phone p-b"><div class="screen"><i class="pl"></i><i class="bn"></i><i class="li"></i><i class="li"></i><i class="li"></i><i class="bt"></i></div></div>
-        <div class="phone p-f"><div class="screen"><i class="pl"></i><i class="bn"></i><i class="li"></i><i class="li"></i><i class="li"></i><i class="bt"></i></div></div></div></div></section>
+      <p class="eb">Novo • Apps para celular, TV e computador</p>
+      <h1><span>Baixe.</span><span class="l2">Assista.</span><span>Repita.</span></h1>
+      <p class="lead">Os aplicativos da ASC para o celular, a TV e o computador. Tudo em um só lugar.</p>
+      <div class="row"><a class="btn pri big" href="#/apps">Ver aplicativos</a><a class="btn big" href="#/categorias">Categorias</a></div>
+      <div class="stats"><div><b data-n="${n}">${n}</b><span>${n === 1 ? 'app' : 'apps'}</span></div><div><b>3</b><span>tipos de aparelho</span></div><div><b>HD</b><span>e Full HD</span></div></div></div>
+      <div class="devices" id="devices" aria-hidden="true"><div class="dv">
+        <div class="dev tvd"><div class="dscr"><i class="u-top"></i><i class="u-ban"></i><span class="u-row"><i></i><i></i><i></i><i></i></span></div></div>
+        <div class="dev lap"><div class="lscr"><div class="dscr"><i class="u-top"></i><i class="u-ban"></i><span class="u-row"><i></i><i></i><i></i></span></div></div><div class="lbase"></div></div>
+        <div class="dev ph"><div class="dscr"><i class="u-top"></i><i class="u-ban"></i><i class="u-li"></i><i class="u-li"></i><i class="u-li"></i><i class="u-bt"></i></div></div>
+        <div class="fchip"><b>3</b><span>celular, TV e computador</span></div></div></div></div></section>
+      <div class="mq" aria-hidden="true"><div class="mq-t"><div class="mq-g">${grp}</div><div class="mq-g">${grp}</div></div></div>
       <section class="blk wrap" id="escolha"><div class="head c"><h2>Escolha seu app</h2><p>Cada app com sua própria identidade. Mesma qualidade.</p></div>
       <div class="grid">${feat.map(card).join('') || '<p class="empty">Nenhum destaque cadastrado.</p>'}</div>
       <p class="more"><a class="btn" href="#/apps">Ver todos os aplicativos</a></p></section>
-      <section class="blk wrap rv"><div class="head c"><h2>Feito para quem ama assistir</h2></div><div class="feats">
-        <div class="feat ac0"><i>${IC.tv}</i><h3>TV ao vivo + EPG</h3><p>Veja o que passa agora e a seguir.</p></div>
-        <div class="feat ac1"><i>${IC.play}</i><h3>Filmes e séries</h3><p>Prévias organizadas e busca rápida.</p></div>
-        <div class="feat ac2"><i>${IC.shield}</i><h3>Rápido e seguro</h3><p>Interface leve e controle com PIN.</p></div></div></section>
+      <section class="blk wrap rv gl"><div class="head c"><h2>Feito para quem ama assistir</h2></div><div class="feats">
+        <div class="feat big"><i>${IC.tv}</i><h3>TV ao vivo + EPG</h3><p>Veja o que passa agora e a seguir.</p></div>
+        <div class="feat"><i>${IC.play}</i><h3>Filmes e séries</h3><p>Prévias organizadas e busca rápida.</p></div>
+        <div class="feat"><i>${IC.shield}</i><h3>Rápido e seguro</h3><p>Interface leve e controle com PIN.</p></div>
+        <div class="feat num"><b data-n="${n}">${n}</b><div><h3>${n === 1 ? 'aplicativo' : 'aplicativos'}</h3><p>Para celular, TV e computador.</p></div></div></div></section>
       <section class="blk wrap rv"><div class="head c"><h2>Como instalar</h2></div>${steps()}</section>`;
     main.querySelectorAll('[data-n]').forEach(count);
+  }
+
+  // Categorias: por tipo de app e por aparelho. Cada item abre o catálogo já filtrado.
+  function categorias() {
+    setMeta('Categorias', 'Veja os aplicativos da ASC por tipo e por aparelho: celular, TV Box, Smart TV e computador.');
+    const cats = [...new Set(DATA.apps.map(a => a.category).filter(Boolean))].sort();
+    const nC = c => DATA.apps.filter(a => a.category === c).length, nP = k => DATA.apps.filter(a => (a.platforms || []).includes(k)).length;
+    const tile = (href, icon, name, n) => `<a class="cat" href="${href}"><i>${icon}</i><span><b>${esc(name)}</b><small>${n ? n + (n === 1 ? ' aplicativo' : ' aplicativos') : 'Em breve'}</small></span><em aria-hidden="true">→</em></a>`;
+    main.innerHTML = `<section class="blk wrap"><div class="head"><h2>Categorias</h2></div>
+      <h3 class="sub">Por tipo de app</h3><div class="cats">${tile('#/apps', IC.grid, 'Todos os aplicativos', DATA.apps.length)}${cats.map(c => tile('#/apps?cat=' + encodeURIComponent(c), IC.play, c, nC(c))).join('')}</div>
+      <h3 class="sub">Por aparelho</h3><div class="cats">${Object.entries(PL).map(([k, v]) => tile('#/apps?plat=' + k, IC[k], v, nP(k))).join('')}</div></section>`;
   }
 
   function apps(params) {
     setMeta('Aplicativos', 'Catálogo completo de aplicativos da ASC para celular, TV Box, Smart TV e computador.');
     const cats = [...new Set(DATA.apps.map(a => a.category))].sort();
-    let st = { q: params.get('q') || '', cat: params.get('cat') || '', sort: 'recent', plat: '' };
+    let st = { q: params.get('q') || '', cat: params.get('cat') || '', sort: 'recent', plat: PL[params.get('plat')] ? params.get('plat') : '' };
     main.innerHTML = `<section class="blk wrap"><div class="head"><h2>Catálogo completo</h2></div>
       <div class="tools"><div class="chips" id="chips" role="group" aria-label="Categorias"></div>
       <select id="plat" aria-label="Plataforma"><option value="">Todas as plataformas</option>${Object.entries(PL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select><select id="sort" aria-label="Ordenar por"><option value="recent">Mais recentes</option><option value="name">Nome (A–Z)</option></select></div>
       <div class="grid" id="list" aria-live="polite"></div></section>`;
     const chips = $('#chips'), list = $('#list'), q = $('#q');
-    q.value = st.q;
+    q.value = st.q; $('#plat').value = st.plat;
     const draw = () => {
       chips.innerHTML = ['', ...cats].map(c => `<button class="chip" data-c="${esc(c)}" aria-pressed="${st.cat === c}">${c ? esc(c) : 'Todas'}</button>`).join('');
       const t = st.q.trim().toLowerCase();
@@ -120,9 +142,11 @@
   function route() {
     const [path, qs] = (location.hash.slice(1) || '/').split('?'), p = new URLSearchParams(qs || '');
     const seg = path.split('/').filter(Boolean);
-    $('#nav').querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.r === (seg[0] === 'app' ? 'apps' : seg[0] || 'home')));
+    const cur = seg[0] === 'app' ? 'apps' : seg[0] === 'categorias' ? 'cats' : seg[0] || 'home';
+    $('#nav').querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.r === cur));
     if (!seg.length) home();
     else if (seg[0] === 'apps') apps(p);
+    else if (seg[0] === 'categorias') categorias();
     else if (seg[0] === 'app') detail(seg[1]);
     else if (seg[0] === 'sobre') page('Sobre a ASC STORE', '<p>A ASC STORE é a plataforma própria da ASC para distribuir seus aplicativos para celular, TV Box, Smart TV e computador. Aqui você conhece cada aplicativo, vê as novidades de cada versão e baixa o arquivo certo para o seu aparelho.</p><p><b>Sobre conteúdo:</b> os aplicativos de reprodução, como o ASC Cine, são apenas reprodutores. Eles não fornecem, não hospedam e não incluem filmes, séries ou listas de terceiros. Cada usuário é responsável pelas listas que utiliza e deve respeitar os direitos autorais.</p><p>No Android e no Android TV, para instalar um APK o sistema pode pedir permissão para instalar de fontes desconhecidas. No Windows, programas novos podem exibir um aviso de segurança. Baixe sempre por esta página.</p>');
     else if (seg[0] === 'privacidade') page('Política de privacidade', '<p>Atualizada em 10 de novembro de 2026.</p><p><b>Quem somos.</b> A ASC STORE é uma plataforma de distribuição de aplicativos da ASC.</p><p><b>Dados que coletamos.</b> O site não exige cadastro e não pede dados pessoais. Não usamos ferramentas de análise nem de publicidade. Como em qualquer site, a infraestrutura (Cloudflare) processa dados técnicos de acesso, como endereço IP e tipo de navegador, para entregar as páginas e garantir a segurança.</p><p><b>Downloads.</b> Os arquivos de instalação são baixados de serviços externos, como o GitHub, que têm suas próprias políticas de privacidade.</p><p><b>Aplicativos.</b> Cada aplicativo pode tratar dados de forma própria. O ASC Cine é um reprodutor de listas IPTV e não fornece nem hospeda conteúdo; as listas utilizadas são de responsabilidade do usuário.</p><p><b>Seus direitos.</b> Conforme a LGPD (Lei 13.709/2018), você pode pedir informações, correção ou exclusão de dados pessoais que tenhamos sobre você, escrevendo para ' + (DATA.site?.contactEmail ? esc(DATA.site.contactEmail) : 'o e-mail de contato indicado no rodapé') + '.</p>');
@@ -143,9 +167,12 @@
     if (e.pointerType === 'touch' || !e.target.closest) return;
     const c = e.target.closest('.card');
     if (c) { const r = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px'); }
-    const ph = $('#phones');
+    const ph = $('#devices');
     if (ph && !reduce) ph.style.transform = `translate(${((e.clientX / innerWidth) - .5) * -14}px,${((e.clientY / innerHeight) - .5) * -10}px)`;
   }, { passive: true });
+  // Barra do topo encolhe ao rolar; aparelhos do hero sobem um pouco (parallax)
+  const onScroll = () => { top.classList.toggle('sc', scrollY > 20); };
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
   // Aviso ao baixar
   let tt; const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('on'), 3800); };
@@ -176,7 +203,6 @@
 
   $('#searchForm').onsubmit = e => { e.preventDefault(); location.hash = '/apps?q=' + encodeURIComponent($('#q').value); };
   $('#q').addEventListener('input', () => { if (!location.hash.startsWith('#/apps')) location.hash = '/apps?q=' + encodeURIComponent($('#q').value); });
-  $('#catLink').onclick = e => { e.preventDefault(); location.hash = '/apps'; setTimeout(() => $('#chips')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); };
   $('#yr').textContent = new Date().getFullYear();
   window.addEventListener('hashchange', route);
 
