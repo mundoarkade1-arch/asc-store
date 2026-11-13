@@ -1,39 +1,77 @@
 (() => {
-  const $ = s => document.querySelector(s), main = $('#main');
+  const $ = s => document.querySelector(s), main = $('#main'), root = document.documentElement;
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR');
-  const isNew = a => (Date.now() - new Date(a.updatedAt)) / 864e5 <= 30;
+  const fmt = d => { const t = new Date(d + 'T12:00:00'); return isNaN(t) ? '' : t.toLocaleDateString('pt-BR'); };
+  const isNew = a => { const t = new Date(a.updatedAt); return !isNaN(t) && (Date.now() - t) / 864e5 <= 30; };
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
   let DATA = { apps: [], site: {} };
+  root.classList.add('js');
+
+  // Versão, tamanho e Android: sempre mostrar de forma limpa (ex.: "v1.0.3", "18.2 MB", "Android 8+")
+  const verOf = v => { const s = String(v ?? '').trim(), m = s.match(/\d+(?:\.\d+)+/); if (m) return m[0]; const t = s.replace(/^v/i, ''); return /\d/.test(t) ? t : ''; };
+  const sizeOf = s => /\d/.test(String(s ?? '')) ? String(s).trim() : '';
+  const andOf = s => { const m = String(s ?? '').match(/\d+/); return m ? 'Android ' + m[0] + '+' : ''; };
+  const accOf = a => { const k = { 'asc-play': 0, 'asc-cine': 1, 'asc-live': 2, 'asc-desk': 3 }[a.id]; if (k != null) return k; let h = 0; for (const c of String(a.id)) h = (h * 31 + c.charCodeAt(0)) % 4; return h; };
 
   const PL = { celular: 'Celular', tvbox: 'TV Box e Android TV', smarttv: 'Smart TV', desktop: 'Computador' };
   const dls = a => a.downloads?.length ? a.downloads : (a.downloadUrl ? [{ label: 'Download', name: '', url: a.downloadUrl, size: a.apkSize }] : []);
-  const plats = a => (a.platforms || []).length ? `<div class="plats">${a.platforms.map(p => `<span class="plat">${esc(PL[p] || p)}</span>`).join('')}</div>` : '';
+  const kind = d => /\.apk(\?|$)/i.test((d.name || '') + ' ' + (d.url || '')) ? 'Baixar APK' : 'Baixar';
+  const plats = a => (a.platforms || []).length ? `<div class="plats">${a.platforms.map(p => esc(PL[p] || p)).join(' · ')}</div>` : '';
+  const pills = a => [verOf(a.version) && 'v' + verOf(a.version), andOf(a.minAndroid), sizeOf(a.apkSize)].filter(Boolean).map(t => `<span class="pill">${esc(t)}</span>`).join('');
   const dl = a => { const d = dls(a);
-    if (!d.length) return `<span class="btn pri" aria-disabled="true">Download em breve</span>`;
+    if (!d.length) return `<span class="btn pri" aria-disabled="true">Em breve</span>`;
     if (d.length > 1) return `<a class="btn pri" href="#/app/${esc(a.id)}">Escolher download</a>`;
-    return `<a class="btn pri" href="${esc(d[0].url)}" rel="noopener" download>Baixar</a>`; };
-  const dlList = a => { const d = dls(a); return d.length ? `<h2>Downloads</h2><div class="dls">${d.map(x => `<a class="dl" href="${esc(x.url)}" rel="noopener" download><b>${esc(x.label)}</b><small>${esc(x.size || '')}${x.name ? ' · ' + esc(x.name) : ''}</small><span class="btn pri">Baixar</span></a>`).join('')}</div>` : '<p class="empty">Download em breve.</p>'; };
-  const card = a => `<article class="card">
-    <div class="ch"><img class="ico" src="${esc(a.icon)}" alt="" width="64" height="64" loading="lazy">
-    <div><h3>${esc(a.name)}${isNew(a) ? '<span class="tag">Atualizado</span>' : ''}</h3><div class="meta">${esc(a.category)} · v${esc(a.version)}</div></div></div>
-    <p>${esc(a.tagline)}</p>${plats(a)}
+    return `<a class="btn pri" href="${esc(d[0].url)}" rel="noopener" download>${kind(d[0])}</a>`; };
+  const dlList = a => { const d = dls(a); return d.length ? `<h2>Downloads</h2><div class="dls">${d.map(x => `<a class="dl" href="${esc(x.url)}" rel="noopener" download><b>${esc(x.label)}</b><small>${esc(x.size || '')}${x.name ? ' · ' + esc(x.name) : ''}</small><span class="btn pri">${kind(x)}</span></a>`).join('')}</div>` : '<p class="empty">Download em breve.</p>'; };
+  const card = (a, i) => `<article class="card ac${accOf(a)}" style="--i:${i}">
+    <img class="ico" src="${esc(a.icon)}" alt="" width="78" height="78" loading="lazy">
+    <h3>${esc(a.name)}${isNew(a) ? '<span class="tag">Atualizado</span>' : ''}</h3>
+    <div class="meta">${esc(a.category)}</div>
+    <p class="tg">${esc(a.tagline)}</p><div class="pills">${pills(a)}</div>${plats(a)}
     <div class="acts"><a class="btn" href="#/app/${esc(a.id)}">Conhecer</a>${dl(a)}</div></article>`;
+  const skel = () => `<section class="blk wrap"><div class="grid">${[0, 1, 2].map(() => '<div class="card sk"><i></i><i></i><i></i></div>').join('')}</div></section>`;
+  const steps = () => `<div class="steps">${[['Baixe o APK do app', 'Escolha o app e toque em baixar.'], ['Permita fontes desconhecidas', 'Libere a instalação nas configurações do Android.'], ['Instale e faça login', 'Abra o arquivo baixado e entre na sua conta.']].map((s, i) => `<div class="step"><b>${i + 1}</b><div><h3>${s[0]}</h3><p>${s[1]}</p></div></div>`).join('')}</div>`;
+  const IC = { tv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>', play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 9v6l5-3z"/></svg>', shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>' };
 
   function setMeta(t, d) {
     document.title = t ? `${t} — ASC STORE` : 'ASC STORE — Seus aplicativos. Um só lugar.';
     if (d) document.querySelector('meta[name=description]').content = d;
   }
+  // Aparecer ao rolar e contar números
+  let io;
+  function reveal() {
+    const els = main.querySelectorAll('.rv'); if (!els.length) return;
+    if (!('IntersectionObserver' in window) || reduce) { els.forEach(e => e.classList.add('in')); return; }
+    io = io || new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+    els.forEach(e => io.observe(e));
+  }
+  function count(el) {
+    const n = +el.dataset.n; if (reduce || !n) return; const t0 = performance.now();
+    const step = t => { const p = Math.min(1, (t - t0) / 900); el.textContent = Math.round(n * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
 
   function home() {
     setMeta('', 'Conheça, explore e baixe os aplicativos da ASC para celular, TV Box, Smart TV e computador.');
-    const feat = DATA.apps.filter(a => a.featured);
-    main.innerHTML = `<section class="hero"><div class="wrap"><div>
-      <h1>Seus aplicativos.<span>Um só lugar.</span></h1>
-      <p>Conheça, explore e baixe os aplicativos desenvolvidos pela ASC.</p>
-      <div class="row"><a class="btn pri" href="#/apps">Explorar aplicativos</a><a class="btn" href="#/sobre">Sobre a ASC STORE</a></div></div>
-      <div class="phone" aria-hidden="true"><div class="screen"><i></i><i></i><i></i><i></i><i></i></div></div></div></section>
-      <section class="blk wrap"><div class="head"><h2>Aplicativos em destaque</h2><a href="#/apps">Ver todos</a></div>
-      <div class="grid">${feat.map(card).join('') || '<p class="empty">Nenhum destaque cadastrado.</p>'}</div></section>`;
+    const feat = DATA.apps.filter(a => a.featured), n = DATA.apps.length;
+    main.innerHTML = `<section class="hero"><div class="hw"><div class="hl">
+      <p class="eb">Novo • Apps IPTV para Android</p>
+      <h1><span>Seus aplicativos.</span><span class="l2">Um só lugar.</span></h1>
+      <p class="lead">Conheça, explore e baixe os aplicativos desenvolvidos pela ASC.</p>
+      <div class="row"><a class="btn pri big" href="#/apps">Explorar aplicativos</a><a class="btn big" href="#/sobre">Sobre a ASC STORE</a></div>
+      <div class="stats"><div><b data-n="${n}">${n}</b><span>${n === 1 ? 'app' : 'apps'}</span></div><div><b>100%</b><span>Android</span></div><div><b>HD</b><span>e Full HD</span></div></div></div>
+      <div class="phones" id="phones" aria-hidden="true">
+        <div class="phone p-b"><div class="screen"><i class="pl"></i><i class="bn"></i><i class="li"></i><i class="li"></i><i class="li"></i><i class="bt"></i></div></div>
+        <div class="phone p-f"><div class="screen"><i class="pl"></i><i class="bn"></i><i class="li"></i><i class="li"></i><i class="li"></i><i class="bt"></i></div></div></div></div></section>
+      <section class="blk wrap" id="escolha"><div class="head c"><h2>Escolha seu app</h2><p>Cada app com sua própria identidade. Mesma qualidade.</p></div>
+      <div class="grid">${feat.map(card).join('') || '<p class="empty">Nenhum destaque cadastrado.</p>'}</div>
+      <p class="more"><a class="btn" href="#/apps">Ver todos os aplicativos</a></p></section>
+      <section class="blk wrap rv"><div class="head c"><h2>Feito para quem ama assistir</h2></div><div class="feats">
+        <div class="feat ac0"><i>${IC.tv}</i><h3>TV ao vivo + EPG</h3><p>Veja o que passa agora e a seguir.</p></div>
+        <div class="feat ac1"><i>${IC.play}</i><h3>Filmes e séries</h3><p>Prévias organizadas e busca rápida.</p></div>
+        <div class="feat ac2"><i>${IC.shield}</i><h3>Rápido e seguro</h3><p>Interface leve e controle com PIN.</p></div></div></section>
+      <section class="blk wrap rv"><div class="head c"><h2>Como instalar</h2></div>${steps()}</section>`;
+    main.querySelectorAll('[data-n]').forEach(count);
   }
 
   function apps(params) {
@@ -51,7 +89,7 @@
       const t = st.q.trim().toLowerCase();
       let r = DATA.apps.filter(a => (!st.cat || a.category === st.cat) && (!st.plat || (a.platforms || []).includes(st.plat)) &&
         (!t || [a.name, a.tagline, a.description, a.category].join(' ').toLowerCase().includes(t)));
-      r.sort(st.sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      r.sort(st.sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
       list.innerHTML = r.map(card).join('') || '<p class="empty">Nenhum aplicativo encontrado. Tente outra busca ou categoria.</p>';
     };
     chips.onclick = e => { const b = e.target.closest('.chip'); if (b) { st.cat = b.dataset.c; draw(); } };
@@ -63,16 +101,18 @@
 
   function detail(id) {
     const a = DATA.apps.find(x => x.id === id);
-    if (!a) { main.innerHTML = '<div class="wrap prose"><h1>Aplicativo não encontrado</h1><p><a href="#/apps" style="color:var(--lime)">Voltar ao catálogo</a></p></div>'; return; }
+    if (!a) { main.innerHTML = '<div class="wrap prose"><h1>Aplicativo não encontrado</h1><p><a href="#/apps">Voltar ao catálogo</a></p></div>'; return; }
     setMeta(a.name, a.tagline);
-    main.innerHTML = `<section class="det wrap"><a class="back" href="#/apps">← Voltar ao catálogo</a>
-      <div class="dh"><img class="ico" src="${esc(a.icon)}" alt="Ícone do ${esc(a.name)}"><div><h1>${esc(a.name)}</h1><p class="meta">${esc(a.category)}${isNew(a) ? '<span class="tag">Atualizado</span>' : ''}</p></div>
-      </div>${plats(a)}
-      <p style="color:var(--mut);max-width:70ch;margin-bottom:2rem">${esc(a.description)}</p>${dlList(a)}
-      <div class="facts"><div><small>Versão atual</small><b>${esc(a.version)}</b></div><div><small>Tamanho</small><b>${esc(a.apkSize)}</b></div>
-      <div><small>Atualizado em</small><b>${fmt(a.updatedAt)}</b></div><div><small>Requisitos mínimos</small><b>${esc(a.minAndroid)}</b></div></div>
-      ${a.screenshots?.length ? `<h2>Capturas de tela</h2><div class="shots" style="margin:1rem 0 2rem">${a.screenshots.map((s, i) => `<img src="${esc(s)}" alt="Captura de tela ${i + 1} do ${esc(a.name)}" loading="lazy">`).join('')}</div>` : ''}
-      <h2>Histórico de versões</h2><ul class="hist">${(a.changelog || []).map(c => `<li><b>v${esc(c.version)}</b> <span class="meta">${fmt(c.date)}</span><ul>${c.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></li>`).join('')}</ul></section>`;
+    const v = verOf(a.version), sz = sizeOf(a.apkSize), up = fmt(a.updatedAt);
+    main.innerHTML = `<section class="det wrap ac${accOf(a)}"><a class="back" href="#/apps">← Voltar ao catálogo</a>
+      <div class="dh"><img class="ico" src="${esc(a.icon)}" alt="Ícone do ${esc(a.name)}"><div><h1>${esc(a.name)}</h1><p class="meta">${esc(a.category)}${isNew(a) ? '<span class="tag">Atualizado</span>' : ''}</p><div class="pills">${pills(a)}</div></div></div>
+      ${plats(a)}
+      <p class="desc">${esc(a.description)}</p>${dlList(a)}
+      <div class="facts"><div><small>Versão atual</small><b>${v ? 'v' + esc(v) : '—'}</b></div><div><small>Tamanho</small><b>${esc(sz) || '—'}</b></div>
+      <div><small>Atualizado em</small><b>${up || '—'}</b></div><div><small>Requisitos mínimos</small><b>${esc(a.minAndroid)}</b></div></div>
+      ${a.screenshots?.length ? `<h2>Capturas de tela</h2><div class="shots">${a.screenshots.map((s, i) => `<img src="${esc(s)}" alt="Captura de tela ${i + 1} do ${esc(a.name)}" loading="lazy">`).join('')}</div>` : ''}
+      <h2>Como instalar</h2>${steps()}
+      <h2>Histórico de versões</h2><ul class="hist">${(a.changelog || []).map(c => `<li><b>v${esc(verOf(c.version) || c.version)}</b> <span class="meta">${fmt(c.date)}</span><ul>${(c.notes || []).map(n => `<li>${esc(n)}</li>`).join('')}</ul></li>`).join('')}</ul></section>`;
   }
 
   const page = (t, body) => { setMeta(t); main.innerHTML = `<div class="wrap prose"><h1>${t}</h1>${body}</div>`; };
@@ -86,8 +126,52 @@
     else if (seg[0] === 'app') detail(seg[1]);
     else if (seg[0] === 'sobre') page('Sobre a ASC STORE', '<p>A ASC STORE é a plataforma própria da ASC para distribuir seus aplicativos para celular, TV Box, Smart TV e computador. Aqui você conhece cada aplicativo, vê as novidades de cada versão e baixa o arquivo certo para o seu aparelho.</p><p><b>Sobre conteúdo:</b> os aplicativos de reprodução, como o ASC Cine, são apenas reprodutores. Eles não fornecem, não hospedam e não incluem filmes, séries ou listas de terceiros. Cada usuário é responsável pelas listas que utiliza e deve respeitar os direitos autorais.</p><p>No Android e no Android TV, para instalar um APK o sistema pode pedir permissão para instalar de fontes desconhecidas. No Windows, programas novos podem exibir um aviso de segurança. Baixe sempre por esta página.</p>');
     else if (seg[0] === 'privacidade') page('Política de privacidade', '<p>Atualizada em 10 de novembro de 2026.</p><p><b>Quem somos.</b> A ASC STORE é uma plataforma de distribuição de aplicativos da ASC.</p><p><b>Dados que coletamos.</b> O site não exige cadastro e não pede dados pessoais. Não usamos ferramentas de análise nem de publicidade. Como em qualquer site, a infraestrutura (Cloudflare) processa dados técnicos de acesso, como endereço IP e tipo de navegador, para entregar as páginas e garantir a segurança.</p><p><b>Downloads.</b> Os arquivos de instalação são baixados de serviços externos, como o GitHub, que têm suas próprias políticas de privacidade.</p><p><b>Aplicativos.</b> Cada aplicativo pode tratar dados de forma própria. O ASC Cine é um reprodutor de listas IPTV e não fornece nem hospeda conteúdo; as listas utilizadas são de responsabilidade do usuário.</p><p><b>Seus direitos.</b> Conforme a LGPD (Lei 13.709/2018), você pode pedir informações, correção ou exclusão de dados pessoais que tenhamos sobre você, escrevendo para ' + (DATA.site?.contactEmail ? esc(DATA.site.contactEmail) : 'o e-mail de contato indicado no rodapé') + '.</p>');
-    else page('Página não encontrada', '<p><a href="#/" style="color:var(--lime)">Voltar ao início</a></p>');
+    else page('Página não encontrada', '<p><a href="#/">Voltar ao início</a></p>');
     if (seg[0] !== 'apps') window.scrollTo(0, 0);
+    reveal(); closeMenu();
+    if (isTV) { const f = main.querySelector('a[href],button'); if (f) f.focus({ preventScroll: true }); }
+  }
+
+  // Menu do celular
+  const top = $('#top'), burger = $('#burger');
+  function closeMenu() { top.classList.remove('open'); burger.setAttribute('aria-expanded', 'false'); burger.setAttribute('aria-label', 'Abrir menu'); }
+  burger.onclick = () => { const o = top.classList.toggle('open'); burger.setAttribute('aria-expanded', o); burger.setAttribute('aria-label', o ? 'Fechar menu' : 'Abrir menu'); };
+  $('#menu').addEventListener('click', e => { if (e.target.closest('a')) closeMenu(); });
+
+  // Brilho que acompanha o mouse nos cards e movimento leve dos celulares
+  document.addEventListener('pointermove', e => {
+    if (e.pointerType === 'touch' || !e.target.closest) return;
+    const c = e.target.closest('.card');
+    if (c) { const r = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px'); }
+    const ph = $('#phones');
+    if (ph && !reduce) ph.style.transform = `translate(${((e.clientX / innerWidth) - .5) * -14}px,${((e.clientY / innerHeight) - .5) * -10}px)`;
+  }, { passive: true });
+
+  // Aviso ao baixar
+  let tt; const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('on'), 3800); };
+  document.addEventListener('click', e => { if (e.target.closest('a[download]')) toast('Download iniciado. Quando terminar, abra o arquivo para instalar.'); });
+
+  // Modo TV: controle remoto (setas, OK e voltar)
+  const isTV = /Tizen|Web0S|WebOS|SMART-TV|SmartTV|HbbTV|BRAVIA|NetCast|CrKey|Android TV|AndroidTV|AFT[A-Z]|MiBOX|TV Box/i.test(navigator.userAgent) || /[?&]tv=1/.test(location.search) ||
+    (window.matchMedia && innerWidth >= 1280 && !matchMedia('(pointer:fine)').matches && !matchMedia('(hover:hover)').matches);
+  if (isTV) {
+    root.classList.add('tv');
+    const vis = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+    const move = dir => {
+      const all = [...document.querySelectorAll('a[href],button:not([disabled]),select,input')].filter(vis), cur = document.activeElement;
+      if (!cur || cur === document.body || !all.includes(cur)) { if (all[0]) all[0].focus(); return; }
+      const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; let best = null, bs = 1e9;
+      all.forEach(el => { if (el === cur) return; const b = el.getBoundingClientRect(), dx = b.left + b.width / 2 - cx, dy = b.top + b.height / 2 - cy;
+        const pr = dir === 'right' ? dx : dir === 'left' ? -dx : dir === 'down' ? dy : -dy, sd = (dir === 'left' || dir === 'right') ? Math.abs(dy) : Math.abs(dx);
+        if (pr <= 4) return; const s = pr + sd * 2.5; if (s < bs) { bs = s; best = el; } });
+      if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' }); }
+    };
+    document.addEventListener('keydown', e => {
+      const k = e.key, c = e.keyCode, typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName);
+      const d = k === 'ArrowRight' || c === 39 ? 'right' : k === 'ArrowLeft' || c === 37 ? 'left' : k === 'ArrowDown' || c === 40 ? 'down' : k === 'ArrowUp' || c === 38 ? 'up' : '';
+      if (d && !(typing && (d === 'left' || d === 'right')) && document.activeElement?.tagName !== 'SELECT') { e.preventDefault(); move(d); return; }
+      if (k === 'Escape' || k === 'GoBack' || k === 'BrowserBack' || k === 'XF86Back' || c === 10009 || c === 461 || (k === 'Backspace' && !typing)) { e.preventDefault(); if (location.hash && location.hash !== '#/') history.back(); }
+    });
   }
 
   $('#searchForm').onsubmit = e => { e.preventDefault(); location.hash = '/apps?q=' + encodeURIComponent($('#q').value); };
@@ -96,8 +180,9 @@
   $('#yr').textContent = new Date().getFullYear();
   window.addEventListener('hashchange', route);
 
-  fetch('/api/apps').then(r => { if (!r.ok) throw 0; return r.json(); }).then(d => d.empty ? Promise.reject() : d)
-    .catch(() => fetch('data/apps.json').then(r => r.json())).then(d => {
+  main.innerHTML = skel();
+  fetch('/api/apps', { cache: 'no-cache' }).then(r => { if (!r.ok) throw 0; return r.json(); }).then(d => d.empty ? Promise.reject() : d)
+    .catch(() => fetch('data/apps.json', { cache: 'no-cache' }).then(r => r.json())).then(d => {
     DATA = d;
     if (d.site?.contactEmail) { const c = $('#contact'); c.href = 'mailto:' + d.site.contactEmail; c.textContent = d.site.contactEmail; }
     route();

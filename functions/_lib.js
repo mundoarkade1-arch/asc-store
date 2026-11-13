@@ -28,22 +28,38 @@ function label(n) {
   if (/\.(zip|7z|rar)$/i.test(n)) { if (/win/i.test(n)) return 'Windows'; if (/mac|osx/i.test(n)) return 'macOS'; if (/linux/i.test(n)) return 'Linux'; if (/tv|box/i.test(n)) return 'TV Box e Android TV'; }
   return 'Download';
 }
+// Versão: pega o primeiro número do tag (ex.: "v1.0.3", "asc-cine-1.0.3" -> "1.0.3")
+const semver = t => { const m = String(t || '').match(/\d+(?:\.\d+){1,3}/); return m ? m[0] : ''; };
+const cmp = (a, b) => { const p = a.split('.'), q = b.split('.'); for (let i = 0; i < Math.max(p.length, q.length); i++) { const d = (Number(p[i]) || 0) - (Number(q[i]) || 0); if (d) return d; } return 0; };
+const verOf = x => semver(x.tag_name) || semver(x.name) || String(x.tag_name || '').replace(/^v/i, '');
+const dayOf = x => { const d = String(x.published_at || x.created_at || '').slice(0, 10); return /^\d{4}-\d\d-\d\d$/.test(d) ? d : new Date().toISOString().slice(0, 10); };
+function build(raw) {
+  const rels = raw.filter(x => !x.draft).map(x => ({ x, v: verOf(x),
+    d: (x.assets || []).filter(a => !SKIP.test(a.name)).map(a => ({ label: label(a.name), name: a.name, url: a.browser_download_url, size: (a.size / 1048576).toFixed(1) + ' MB' }))
+      .sort((p, q) => ORDER.indexOf(p.label) - ORDER.indexOf(q.label)) })).filter(o => o.d.length);
+  if (!rels.length) return null;
+  const t = o => Date.parse(o.x.published_at || o.x.created_at) || 0;
+  rels.sort((a, b) => cmp(b.v, a.v) || t(b) - t(a)); // a maior versão vem primeiro
+  const best = rels.find(o => !o.x.prerelease) || rels[0];
+  return { version: best.v, updatedAt: dayOf(best.x), apkSize: best.d[0].size, downloadUrl: best.d[0].url, downloads: best.d,
+    changelog: rels.filter(o => !o.x.prerelease || o === best).slice(0, 10).map(o => ({ version: o.v, date: dayOf(o.x),
+      notes: (o.x.body || 'Nova versão').split('\n').map(l => l.replace(/^[-*#\s]+/, '').trim()).filter(Boolean).slice(0, 8) })) };
+}
 export async function withReleases(app, env) {
   if (!app.repo) return app;
+  const key = 'rel:' + app.repo.toLowerCase();
+  let rel = null;
   try {
-    const r = await fetch(`https://api.github.com/repos/${app.repo}/releases?per_page=10`, {
+    const r = await fetch(`https://api.github.com/repos/${app.repo}/releases?per_page=30`, {
       headers: { 'user-agent': 'asc-store', accept: 'application/vnd.github+json', ...(env.GITHUB_TOKEN ? { authorization: 'Bearer ' + env.GITHUB_TOKEN } : {}) },
-      cf: { cacheTtl: 300, cacheEverything: true }
+      cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 300, '300-599': 0 } }
     });
-    if (!r.ok) return app;
-    const list = (await r.json()).filter(x => !x.draft && !x.prerelease).map(x => ({ x,
-      d: (x.assets || []).filter(a => !SKIP.test(a.name)).map(a => ({ label: label(a.name), name: a.name, url: a.browser_download_url, size: (a.size / 1048576).toFixed(1) + ' MB' }))
-        .sort((p, q) => ORDER.indexOf(p.label) - ORDER.indexOf(q.label)) })).filter(o => o.d.length);
-    if (!list.length) return app;
-    const ver = x => x.tag_name.replace(/^v/i, ''), day = x => x.published_at.slice(0, 10);
-    const { x, d } = list[0];
-    return { ...app, version: ver(x), updatedAt: day(x), apkSize: d[0].size, downloadUrl: d[0].url, downloads: d,
-      changelog: list.map(({ x }) => ({ version: ver(x), date: day(x),
-        notes: (x.body || 'Nova versão').split('\n').map(l => l.replace(/^[-*#\s]+/, '').trim()).filter(Boolean).slice(0, 8) })) };
-  } catch { return app; }
+    if (r.ok) {
+      rel = build(await r.json());
+      // Guarda a última leitura boa. Se o GitHub falhar ou limitar, o site usa esta e não volta para a versão velha.
+      if (rel && env.ASC_KV) { try { const s = JSON.stringify(rel); if ((await env.ASC_KV.get(key)) !== s) await env.ASC_KV.put(key, s, { expirationTtl: 5184000 }); } catch {} }
+    }
+  } catch {}
+  if (!rel && env.ASC_KV) { try { rel = await env.ASC_KV.get(key, 'json'); } catch {} }
+  return rel ? { ...app, ...rel } : app;
 }
