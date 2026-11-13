@@ -3,36 +3,79 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ASC STORE — Seus aplicativos. Um só lugar.</title>
-<meta name="description" content="Conheça, explore e baixe os aplicativos da ASC para celular, TV Box, Smart TV e computador.">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin — ASC STORE</title>
 <meta name="theme-color" content="#070807">
-<meta property="og:title" content="ASC STORE"><meta property="og:description" content="Conheça, explore e baixe os aplicativos desenvolvidos pela ASC.">
-<meta property="og:type" content="website">
-<link rel="icon" href="assets/brand/logo.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="icon" href="/assets/brand/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css?v=3">
+<link rel="stylesheet" href="/admin/admin.css?v=3">
 </head>
-<body>
-<a class="skip" href="#main">Ir para o conteúdo</a>
-<header class="top" id="top"><div class="bar">
-  <a class="logo" href="#/" aria-label="ASC STORE – início"><img src="assets/brand/logo.svg" alt="" width="38" height="38">ASC <b>STORE</b></a>
-  <div class="menu" id="menu">
-    <nav id="nav" aria-label="Principal">
-      <a href="#/" data-r="home">Início</a><a href="#/apps" data-r="apps">Aplicativos</a>
-      <a href="#/categorias" data-r="cats" id="catLink">Categorias</a><a href="#/sobre" data-r="sobre">Sobre</a>
-    </nav>
-    <form class="search" role="search" id="searchForm"><input id="q" type="search" placeholder="Pesquisar aplicativos" aria-label="Pesquisar aplicativos" autocomplete="off"></form>
-    <a class="btn pri" href="#/apps">Baixar agora</a>
-  </div>
-  <button class="burger" id="burger" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span></button>
+<body class="adm">
+<header class="adm-top"><div class="adm-bar">
+  <a class="logo" href="/" aria-label="Voltar à loja"><img src="/assets/brand/logo.svg" alt="" width="38" height="38">ASC <b>STORE</b> <span class="meta">Admin</span></a>
+  <button class="btn" id="out" type="button" hidden>Sair</button>
 </div></header>
-<main id="main" tabindex="-1"></main>
-<footer class="foot"><div class="wrap">
-  <div><a class="logo" href="#/"><img src="assets/brand/logo.svg" alt="" width="38" height="38">ASC <b>STORE</b></a><p>Plataforma própria de distribuição de aplicativos da ASC para celular, TV e computador.</p></div>
-  <div><h4>Loja</h4><a href="#/apps">Aplicativos</a><a href="#/categorias">Categorias</a><a href="#/sobre">Sobre a plataforma</a><a href="#/privacidade">Política de privacidade</a></div>
-  <div><h4>Contato</h4><a id="contact" href="mailto:contato@exemplo.com">contato@exemplo.com</a></div>
-</div><p class="copy wrap">© <span id="yr"></span> ASC. Todos os direitos reservados.</p></footer>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div class="tvbar" aria-hidden="true"><span>◄ ► ▲ ▼ <b>Navegar</b></span><span><b>OK</b> Selecionar</span><span>◄ <b>Voltar</b></span></div>
-<script src="js/app.js?v=3"></script>
+
+<main class="adm-main">
+  <!-- Login -->
+  <form id="login" class="adm-card adm-login" autocomplete="on" hidden>
+    <h1>Entrar</h1>
+    <label for="pw">Senha do administrador</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <button class="btn pri" type="submit">Entrar</button>
+    <p id="lmsg" class="msg err" role="alert"></p>
+  </form>
+
+  <!-- Painel -->
+  <section id="panel" hidden>
+    <p id="msg" class="msg" role="status" aria-live="polite"></p>
+
+    <div class="adm-card">
+      <div class="adm-head"><h2>Aplicativos</h2><button class="btn pri" id="new" type="button">Novo aplicativo</button></div>
+      <div id="list"></div>
+    </div>
+
+    <form id="form" class="adm-card" hidden>
+      <h2>Aplicativo</h2>
+      <div class="adm-grid">
+        <div><label for="f-name">Nome</label><input id="f-name" required maxlength="60"></div>
+        <div><label for="f-category">Categoria</label><input id="f-category" maxlength="30" placeholder="Entretenimento"></div>
+        <div class="full"><label for="f-tagline">Frase curta</label><input id="f-tagline" maxlength="120"></div>
+        <div class="full"><label for="f-description">Descrição</label><textarea id="f-description" rows="5" maxlength="3000"></textarea></div>
+        <div><label for="f-repo">Repositório do GitHub (usuario/repositorio)</label><input id="f-repo" placeholder="usuario/repositorio"></div>
+        <div><label for="f-min">Versão mínima do Android</label><input id="f-min" maxlength="60" placeholder="Android 8.0 ou superior"></div>
+        <div><label for="f-url">Link de download manual (https://…)</label><input id="f-url" type="url"></div>
+        <div><label for="f-version">Versão (manual)</label><input id="f-version" maxlength="20"></div>
+        <div><label for="f-size">Tamanho (manual)</label><input id="f-size" maxlength="20" placeholder="25 MB"></div>
+        <div class="full"><span class="lbl">Plataformas</span>
+          <div id="plats" class="adm-plats">
+            <label><input type="checkbox" value="celular"> Celular</label>
+            <label><input type="checkbox" value="tvbox"> TV Box</label>
+            <label><input type="checkbox" value="smarttv"> Smart TV</label>
+            <label><input type="checkbox" value="desktop"> Computador</label>
+          </div></div>
+        <div class="full"><label class="adm-chk"><input id="f-featured" type="checkbox"> Mostrar em destaque</label></div>
+        <div><label for="f-icon">Ícone</label><input id="f-icon" type="file" accept="image/png,image/jpeg,image/webp"><img id="prev" class="ico" alt="Prévia do ícone" width="78" height="78"></div>
+        <div><label for="f-shots">Capturas de tela (até 4)</label><input id="f-shots" type="file" accept="image/png,image/jpeg,image/webp" multiple></div>
+      </div>
+      <div class="adm-actions"><button class="btn pri" type="submit">Salvar</button><button class="btn" id="cancel" type="button">Cancelar</button></div>
+    </form>
+
+    <div class="adm-card">
+      <h2>Site</h2>
+      <label for="email">E-mail de contato</label>
+      <input id="email" type="email" maxlength="100">
+      <div class="adm-actions"><button class="btn" id="saveSite" type="button">Salvar e-mail</button></div>
+    </div>
+
+    <div class="adm-card">
+      <h2>Backup</h2>
+      <div class="adm-actions">
+        <button class="btn" id="bk" type="button">Baixar backup</button>
+        <label class="btn" for="rs">Restaurar backup</label><input id="rs" type="file" accept="application/json" hidden>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="/admin/admin.js?v=3"></script>
 </body></html>

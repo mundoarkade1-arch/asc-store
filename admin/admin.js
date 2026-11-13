@@ -1,12 +1,13 @@
 (() => {
   const $ = s => document.querySelector(s), F = id => $('#f-' + id);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const abs = u => !u ? '/assets/brand/favicon.svg' : (!/^(data:|blob:|https?:|\/)/.test(u) ? '/' + u : u);
   let cat = { site: {}, apps: [] }, cur = null, icon = '', shots = [];
   const msg = (t, e) => { const m = $('#msg'); m.textContent = t; m.className = 'msg' + (e ? ' err' : ''); };
   async function api(method, url, body) {
     const r = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw Object.assign(new Error(d.error || 'Erro inesperado.'), { status: r.status });
+    if (!r.ok) throw Object.assign(new Error(d.error || (r.status === 404 ? 'API não encontrada. Confira se a pasta functions foi publicada no GitHub.' : 'Erro do servidor (' + r.status + '). Veja se o KV ASC_KV e os secrets estão configurados no Cloudflare.')), { status: r.status });
     return d;
   }
   const show = login => { $('#login').hidden = !login; $('#panel').hidden = login; $('#out').hidden = login; };
@@ -18,7 +19,7 @@
     return c.toDataURL(type, q);
   }
   function list() {
-    $('#list').innerHTML = cat.apps.map((a, i) => `<div class="item r"><img class="ico" src="${esc(a.icon)}" alt="" style="width:48px;height:48px"><div style="flex:1"><b>${esc(a.name)}</b><div class="meta">${esc(a.category)} · ${a.repo ? esc(a.repo) + ' (automático)' : 'link manual'}</div></div><button class="btn" data-e="${i}">Editar</button><button class="btn" data-d="${i}">Excluir</button></div>`).join('') || '<p class="meta">Nenhum aplicativo ainda. Clique em "Novo aplicativo".</p>';
+    $('#list').innerHTML = cat.apps.map((a, i) => `<div class="item r"><img class="ico" src="${esc(abs(a.icon))}" alt="" style="width:48px;height:48px"><div style="flex:1"><b>${esc(a.name)}</b><div class="meta">${esc(a.category)} · ${a.repo ? esc(a.repo) + ' (automático)' : 'link manual'}</div></div><button class="btn" data-e="${i}">Editar</button><button class="btn" data-d="${i}">Excluir</button></div>`).join('') || '<p class="meta">Nenhum aplicativo ainda. Clique em "Novo aplicativo".</p>';
     $('#email').value = cat.site?.contactEmail || '';
   }
   function edit(i) {
@@ -26,7 +27,7 @@
     F('name').value = a.name || ''; F('tagline').value = a.tagline || ''; F('description').value = a.description || '';
     F('category').value = a.category || ''; F('min').value = a.minAndroid || ''; F('repo').value = a.repo || '';
     F('featured').checked = !!a.featured; document.querySelectorAll('#plats input').forEach(c => { c.checked = (a.platforms || []).includes(c.value); }); F('url').value = a.downloadUrl || ''; F('version').value = a.version || ''; F('size').value = a.apkSize || '';
-    icon = a.icon || ''; shots = a.screenshots || []; $('#prev').src = icon; F('icon').value = ''; F('shots').value = '';
+    icon = a.icon || ''; shots = a.screenshots || []; $('#prev').src = abs(icon); F('icon').value = ''; F('shots').value = '';
     $('#form').hidden = false; $('#form').scrollIntoView({ behavior: 'smooth' });
   }
   async function persist(ok) {

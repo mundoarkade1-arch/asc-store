@@ -13,7 +13,13 @@ export async function isAdmin(req, env) {
   if (!m || !env.SESSION_SECRET || Date.now() > +m[1]) return false;
   return safeEq(m[2], await sign(m[1], env.SESSION_SECRET));
 }
-export async function getCatalog(env) { return await env.ASC_KV.get('catalog', 'json'); }
+// Bloqueia requisições vindas de outro site (proteção extra além do SameSite=Strict)
+export function sameOrigin(req) {
+  const o = req.headers.get('origin');
+  return !o || o === new URL(req.url).origin;
+}
+export async function getCatalog(env) { if (!env.ASC_KV) return null; try { return await env.ASC_KV.get('catalog', 'json'); } catch { return null; } }
+export const noKV = env => !env.ASC_KV ? json({ error: 'KV não configurado: crie o binding ASC_KV no Cloudflare (Settings > Bindings) e publique de novo.' }, 500) : null;
 
 // Lê as releases do GitHub. Cada arquivo anexado vira um download, com a plataforma deduzida pelo nome/extensão.
 const SKIP = /\.(sha256|sha1|md5|txt|md|sig|asc|json|ya?ml|blockmap)$/i;

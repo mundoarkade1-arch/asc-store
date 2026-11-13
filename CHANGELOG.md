@@ -13,3 +13,7 @@
 - Modo TV: setas, OK e voltar do controle remoto, anel de foco e barra de ajuda.
 - Versão do app: lê o número de qualquer formato de tag, escolhe a maior versão e guarda a última leitura boa se o GitHub falhar.
 - Cursor: seta normal em toda a tela (cursor de digitar só nos campos de texto).
+
+## 2.0.1
+- Corrigido: painel /admin (a página estava sobrescrita pela da loja) e caminhos relativos que quebravam CSS e logo.
+- Segurança: checagem de origem em login/logout/salvar, cabeçalhos CSP e anti-embed, validação de caminho de imagem, mensagens claras quando o KV não está configurado.

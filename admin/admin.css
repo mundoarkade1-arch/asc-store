@@ -1,0 +1,23 @@
+.adm-top{position:sticky;top:0;z-index:20;background:rgba(7,8,7,.8);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.adm-bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;width:min(960px,92%);margin:auto;height:68px}
+.adm-main{width:min(960px,92%);margin:2rem auto 4rem;display:grid;gap:1.2rem}
+#panel{display:grid;gap:1.2rem}
+.adm-card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:1.5rem;display:grid;gap:.9rem}
+.adm-card[hidden],#panel[hidden],#out[hidden]{display:none}
+.adm-card h1,.adm-card h2{font:700 1.4rem var(--fh)}
+.adm-login{max-width:420px;margin:4rem auto}
+.adm-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.adm label,.lbl{display:block;font-size:.88rem;color:var(--text-2);margin-bottom:.3rem}
+.adm input:not([type=checkbox]):not([type=file]),.adm textarea{width:100%;background:var(--surface);border:1px solid var(--line);color:var(--text);padding:.7rem 1rem;border-radius:14px;font:inherit;font-size:.95rem}
+.adm input:focus,.adm textarea:focus{outline:none;border-color:var(--lime);box-shadow:0 0 0 4px rgba(198,255,61,.12)}
+.adm input[type=file]{color:var(--text-2);font-size:.88rem}
+.adm-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.adm-grid .full{grid-column:1/-1}
+.adm-plats{display:flex;gap:1.2rem;flex-wrap:wrap}.adm-plats label,.adm-chk{display:flex;align-items:center;gap:.5rem;color:var(--text);margin:0}
+.adm-actions{display:flex;gap:.7rem;flex-wrap:wrap}
+.item{display:flex;align-items:center;gap:1rem;padding:.8rem 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item .ico{width:48px;height:48px;border-radius:14px}
+.msg{min-height:1.4em;font-size:.92rem;color:var(--lime)}.msg.err{color:var(--danger)}
+.adm,.adm input,.adm textarea{-webkit-user-select:text;user-select:text;caret-color:auto}
+@media(max-width:640px){.adm-grid{grid-template-columns:1fr}}
+.adm label.btn{display:inline-flex;margin:0;color:#fff;font-size:.96rem}

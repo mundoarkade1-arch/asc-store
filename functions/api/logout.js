@@ -1,4 +1,5 @@
-import { json } from '../_lib.js';
-export async function onRequestPost() {
+import { json, sameOrigin } from '../_lib.js';
+export async function onRequestPost({ request }) {
+  if (!sameOrigin(request)) return json({ error: 'Origem inválida.' }, 403);
   return json({ ok: true }, 200, { 'set-cookie': 'asc_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0' });
 }

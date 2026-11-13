@@ -1,11 +1,13 @@
-import { json, isAdmin, getCatalog } from '../../_lib.js';
+import { json, isAdmin, getCatalog, sameOrigin, noKV } from '../../_lib.js';
 const s = (v, n) => String(v ?? '').slice(0, n);
-const img = v => /^(data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+|assets\/[\w./-]+)$/.test(v || '') ? v : '';
+const img = v => /^(data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+|assets\/(?!.*\.\.)[\w./-]+)$/.test(v || '') ? v : '';
 export async function onRequestGet({ request, env }) {
   if (!(await isAdmin(request, env))) return json({ error: 'Não autorizado.' }, 401);
   return json((await getCatalog(env)) || { site: { contactEmail: '' }, apps: [] });
 }
 export async function onRequestPut({ request, env }) {
+  if (noKV(env)) return noKV(env);
+  if (!sameOrigin(request)) return json({ error: 'Origem inválida.' }, 403);
   if (!(await isAdmin(request, env))) return json({ error: 'Sessão expirada. Entre de novo.' }, 401);
   if (!(request.headers.get('content-type') || '').includes('application/json')) return json({ error: 'Tipo inválido.' }, 415);
   const raw = await request.text();

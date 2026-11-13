@@ -1,5 +1,7 @@
-import { json, checkPassword, makeToken } from '../_lib.js';
+import { json, checkPassword, makeToken, sameOrigin, noKV } from '../_lib.js';
 export async function onRequestPost({ request, env }) {
+  if (!sameOrigin(request)) return json({ error: 'Origem inválida.' }, 403);
+  if (noKV(env)) return noKV(env);
   if (!env.ADMIN_PASSWORD || !env.SESSION_SECRET) return json({ error: 'Senha do admin ainda não configurada no Cloudflare.' }, 500);
   const k = 'rl:' + (request.headers.get('cf-connecting-ip') || 'x'), n = +(await env.ASC_KV.get(k)) || 0;
   if (n >= 5) return json({ error: 'Muitas tentativas. Aguarde 15 minutos.' }, 429);
