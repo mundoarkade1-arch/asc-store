@@ -1,0 +1,21 @@
+{
+  "site": { "contactEmail": "contato@exemplo.com" },
+  "apps": [
+    {
+      "id": "asc-cine",
+      "name": "ASC Cine",
+      "tagline": "EXEMPLO: edite este texto",
+      "description": "EXEMPLO: substitua pela descrição completa do ASC Cine.",
+      "category": "Entretenimento",
+      "featured": true,
+      "icon": "assets/apps/asc-cine/icon.svg",
+      "screenshots": [],
+      "version": "1.0.0",
+      "apkSize": "— MB",
+      "updatedAt": "2026-11-09",
+      "minAndroid": "Android 8.0 ou superior",
+      "downloadUrl": "",
+      "changelog": [{ "version": "1.0.0", "date": "2026-11-09", "notes": ["Primeira versão"] }]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://asc-store.pages.dev/sitemap.xml
+Disallow: /admin/
